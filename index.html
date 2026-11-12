@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Murphy</title>
+<style>
+:root{--bg:#eef2f6;--bg2:#fbfcfd;--surface:rgba(255,255,255,.62);--text:#182028;--muted:#5d6b78;--line:rgba(24,32,40,.12);--accent:#0891b8;--accent-soft:rgba(8,145,184,.12);--warn:#c4453a;color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a0e13;--bg2:#141b23;--surface:rgba(30,40,52,.55);--text:#e7eef4;--muted:#8d9cab;--line:rgba(231,238,244,.12);--accent:#58d6f2;--accent-soft:rgba(88,214,242,.13);--warn:#f07a6e;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0a0e13;--bg2:#141b23;--surface:rgba(30,40,52,.55);--text:#e7eef4;--muted:#8d9cab;--line:rgba(231,238,244,.12);--accent:#58d6f2;--accent-soft:rgba(88,214,242,.13);--warn:#f07a6e;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*{box-sizing:border-box}
+body{margin:0;min-height:100%;background:radial-gradient(120% 70% at 50% 0%,var(--bg2),var(--bg));color:var(--text);font:400 15px/1.5 "Inter","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+.app{max-width:1060px;margin:0 auto;padding:16px 18px 28px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font-weight:300;font-size:22px;letter-spacing:.42em;margin:0}
+.clock{text-align:right;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.3}
+.clock b{display:block;color:var(--text);font-weight:500;font-size:17px}
+.iconbtn{background:none;border:1px solid var(--line);color:var(--text);border-radius:50%;width:40px;height:40px;cursor:pointer;display:grid;place-items:center}
+.core{position:relative;display:flex;flex-direction:column;align-items:center;margin-top:4px}
+canvas{width:min(100%,440px);aspect-ratio:1;display:block}
+.state{font-size:13px;letter-spacing:.14em;color:var(--accent);font-weight:500;min-height:20px;margin-top:-18px}
+.mic{margin-top:14px;width:68px;height:68px;border-radius:50%;border:1px solid var(--line);background:var(--surface);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:var(--text);cursor:pointer;display:grid;place-items:center;transition:box-shadow .3s,border-color .3s,color .3s}
+.mic[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 6px var(--accent-soft)}
+.hint{font-size:12.5px;color:var(--muted);margin:8px 0 0;text-align:center;max-width:46ch;min-height:20px}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:14px;align-items:center}
+.chips span{font-size:12px;color:var(--muted);margin-right:4px}
+.chip{font:inherit;font-size:12px;border:1px solid var(--line);background:none;color:var(--text);border-radius:999px;padding:4px 11px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.grid{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-top:22px}
+.panel{background:var(--surface);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:18px;padding:16px}
+h2{font-size:14px;font-weight:600;margin:0 0 10px}
+#log{height:210px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:4px}
+.empty{color:var(--muted);margin:auto;text-align:center;font-size:14px}
+.msg{padding:8px 12px;border-radius:12px;max-width:88%;font-size:14px;overflow-wrap:anywhere}
+.msg.user{align-self:flex-end;background:var(--accent-soft)}
+.msg.sys{align-self:flex-start;border:1px solid var(--line);color:var(--muted)}
+.msg.err{border-color:var(--warn);color:var(--warn)}
+form.in{display:flex;gap:8px;margin-top:12px}
+input[type=text]{flex:1;min-width:0;font:inherit;color:var(--text);background:transparent;border:1px solid var(--line);border-radius:999px;padding:10px 16px}
+.send{font:inherit;border:0;border-radius:999px;background:var(--accent);color:var(--bg);padding:0 18px;font-weight:600;cursor:pointer}
+.row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.row:last-child{border:0}.row span:first-child{color:var(--muted)}.row span:last-child{text-align:right}
+.ok{color:var(--accent)}.bad{color:var(--warn)}
+#settings{position:fixed;inset:auto 0 0 0;max-width:420px;margin:0 auto;padding:18px;background:var(--bg2);border:1px solid var(--line);border-radius:18px 18px 0 0;display:none;z-index:5;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}
+#settings.open{display:block}
+label.f{display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:14px}
+select{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:5px 8px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ctl{display:flex;gap:6px;margin-top:10px;justify-content:center;flex-wrap:wrap}.dots i{display:inline-block;width:6px;height:6px;margin:0 2px;border-radius:50%;background:var(--accent);animation:b 1s infinite}.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}@keyframes b{50%{opacity:.2}}.msg.ai{align-self:flex-start;border:1px solid var(--line);white-space:pre-wrap}.send:disabled{opacity:.5}@media (prefers-reduced-motion:reduce){.dots i{animation:none}}
+@media (max-width:760px){.grid{grid-template-columns:1fr}.brand{font-size:19px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <h1 class="brand">MURPHY</h1>
+  <div style="display:flex;gap:12px;align-items:center">
+    <div class="clock"><b id="time">--:--</b><span id="date"></span></div>
+    <button class="iconbtn" id="gear" aria-label="Open settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg></button>
+  </div>
+</header>
+
+<section class="core" aria-label="Murphy core">
+  <canvas id="orb" role="img" aria-label="Murphy core visualization"></canvas>
+  <div class="state" id="stateLabel" aria-live="polite">Idle</div>
+  <button class="mic" id="mic" aria-pressed="false" aria-label="Start listening"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+  <p class="hint" id="hint">Tap the microphone and speak, or type below.</p>
+  <button class="chip" id="retry" hidden style="margin-top:8px">Retry microphone</button>
+  <div class="ctl"><button class="chip" id="mute" aria-pressed="true">Voice replies: On</button><button class="chip" id="stop">Stop speaking</button></div>
+  <div class="chips" role="group" aria-label="Preview core states"><span>Preview states</span></div>
+</section>
+
+<div class="grid">
+  <section class="panel" aria-label="Conversation">
+    <h2>Conversation</h2>
+    <div id="log"><p class="empty" id="empty">Nothing here yet. Type a message below.</p></div>
+    <form class="in" id="form"><input type="text" id="txt" placeholder="Type a message" autocomplete="off" aria-label="Message"><button class="send" type="submit">Send</button></form>
+  </section>
+  <section class="panel" aria-label="System status">
+    <h2>System status</h2>
+    <div class="row"><span>Core state</span><span id="sState">Idle</span></div>
+    <div class="row"><span>Microphone</span><span id="sMic">Checking</span></div>
+    <div class="row"><span>Network</span><span id="sNet">Checking</span></div>
+    <div class="row"><span>AI connection</span><span id="sAI" class="bad">Checking</span></div>
+    <div class="row"><span>Speech recognition</span><span id="sSR">Checking</span></div>
+    <div class="row"><span>Voice replies</span><span id="sTTS">Checking</span></div>
+  </section>
+</div>
+</div>
+
+<div id="settings" role="dialog" aria-label="Settings">
+  <h2>Settings</h2>
+  <label class="f">Theme<select id="theme"><option value="auto">Match device</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+  <label class="f">Send voice automatically<input type="checkbox" id="auto"></label>
+  <label class="f">Lightweight animation<input type="checkbox" id="lite"></label>
+  <button class="chip" id="closeSet" style="margin-top:8px">Close</button>
+</div>
+
+<script>
+const $=s=>document.querySelector(s), root=document.documentElement;
+const P={IDLE:{spd:.25,amp:.02,ring:.2,col:[24,150,190],glow:.35,label:'Idle'},
+LISTENING:{spd:.5,amp:.07,ring:.6,col:[0,170,215],glow:.6,label:'Listening'},
+PROCESSING:{spd:1.6,amp:.035,ring:2.2,col:[70,120,235],glow:.55,label:'Processing'},
+SPEAKING:{spd:.7,amp:.09,ring:.9,col:[30,185,205],glow:.7,label:'Speaking'},
+ERROR:{spd:.12,amp:.01,ring:.08,col:[205,80,70],glow:.4,label:'Error'}};
+let state='IDLE', cur={...P.IDLE,col:[...P.IDLE.col]}, lite=false, level=0, mic=null;
+const pref={};try{Object.assign(pref,JSON.parse(localStorage.getItem('murphy-pref')||'{}'))}catch(e){}
+function savePref(){try{localStorage.setItem('murphy-pref',JSON.stringify(pref))}catch(e){}}
+
+// state + preview chips
+const chips=$('.chips');
+Object.keys(P).forEach(k=>{const b=document.createElement('button');b.className='chip';b.textContent=P[k].label;b.dataset.k=k;b.setAttribute('aria-pressed',k==='IDLE');b.onclick=()=>{if(mic)stopMic();setState(k)};chips.appendChild(b)});
+function setState(k){state=k;$('#stateLabel').textContent=P[k].label;$('#sState').textContent=P[k].label;document.querySelectorAll('.chip[data-k]').forEach(c=>c.setAttribute('aria-pressed',c.dataset.k===k))}
+
+// clock
+function tick(){const d=new Date();$('#time').textContent=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});$('#date').textContent=d.toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'})}
+tick();setInterval(tick,1000);
+
+// network + mic permission (real values)
+function net(){const o=navigator.onLine;$('#sNet').textContent=o?'Online':'Offline';$('#sNet').className=o?'ok':'bad'}
+net();addEventListener('online',net);addEventListener('offline',net);
+function micStatus(t,c){$('#sMic').textContent=t;$('#sMic').className=c||''}
+try{navigator.permissions.query({name:'microphone'}).then(p=>{const f=()=>{if(mic)return;micStatus({granted:'Allowed',denied:'Blocked',prompt:'Not asked yet'}[p.state]||p.state,p.state==='denied'?'bad':'')};f();p.onchange=f}).catch(()=>micStatus('Unknown'))}catch(e){micStatus('Unknown')}
+
+// microphone + speech recognition (diagnosed, not guessed)
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition, android=/Android/i.test(navigator.userAgent), DH='Tap the microphone and speak, or type below.';
+let stream,actx,an=null,buf,rec=null,starting=false,errTimer;
+const showHint=(m,retry)=>{$('#hint').textContent=m;$('#retry').hidden=!retry};
+const pressed=b=>{$('#mic').setAttribute('aria-pressed',b);$('#mic').setAttribute('aria-label',b?'Stop listening':'Start listening')};
+function pp(){try{const p=document.permissionsPolicy||document.featurePolicy;return p&&p.allowsFeature?p.allowsFeature('microphone'):null}catch(e){return null}}
+function framed(){try{return window.self!==window.top}catch(e){return true}}
+async function permState(){try{return(await navigator.permissions.query({name:'microphone'})).state}catch(e){return null}}
+function release(){if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;if(actx)actx.close().catch(()=>{});actx=null;an=null}
+function micFail(m,status){setState('ERROR');showHint(m,true);micStatus(status,'bad');clearTimeout(errTimer);errTimer=setTimeout(()=>{if(state==='ERROR')setState('IDLE')},5000)}
+async function startMic(){
+  if(starting||mic||rec)return;starting=true;clearTimeout(errTimer);stopSpeak();showHint('Requesting microphone…');
+  try{
+    if(!isSecureContext)return micFail('The microphone needs a secure (https) address. This page is on '+location.protocol+'.','Insecure');
+    if(pp()===false)return micFail('This page is inside a frame that doesn’t allow the microphone, so your Chrome setting can’t apply. Open Murphy at its own web address instead of a preview.','Blocked by frame');
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return micFail('This browser doesn’t provide microphone access. Use Chrome.','Unsupported');
+    try{stream=await navigator.mediaDevices.getUserMedia({audio:true})}
+    catch(e){
+      const s=await permState();let m;
+      if(e.name==='NotAllowedError'){
+        if(s==='denied')m='Chrome has the microphone blocked for this site. Tap the lock icon next to the address, choose Permissions, set Microphone to Allow, then tap Retry.';
+        else if(framed())m='The browser refused the microphone even though the site setting isn’t blocked, and this page is running inside a frame. Open Murphy at its own web address.';
+        else m='The microphone request was dismissed or refused (permission: '+(s||'unknown')+'). Tap Retry and choose Allow.';
+        return micFail(m,'Denied');
+      }
+      if(e.name==='NotFoundError')return micFail('No microphone was found on this device.','No device');
+      if(e.name==='NotReadableError')return micFail('The microphone is in use by another app. Close it and tap Retry.','Busy');
+      return micFail('The microphone couldn’t start: '+e.name+(e.message?' – '+e.message:''),'Error');
+    }
+    micStatus('Allowed','ok');
+    if(SR){if(android)release();else try{actx=new(window.AudioContext||window.webkitAudioContext)();an=actx.createAnalyser();an.fftSize=256;actx.createMediaStreamSource(stream).connect(an);buf=new Uint8Array(an.fftSize)}catch(e){}startRec()}
+    else{try{actx=new(window.AudioContext||window.webkitAudioContext)();an=actx.createAnalyser();an.fftSize=256;actx.createMediaStreamSource(stream).connect(an);buf=new Uint8Array(an.fftSize)}catch(e){}
+      mic=true;pressed(true);setState('LISTENING');micStatus('Live (no transcription)','ok');showHint('Microphone works, but this browser has no speech recognition, so Murphy can’t transcribe. Use Chrome, or type.')}
+  }finally{starting=false}
+}
+function startRec(){
+  let final='',err=null;rec=new SR();rec.lang=navigator.language||'en-US';rec.interimResults=true;rec.continuous=false;
+  rec.onstart=()=>{mic=true;pressed(true);setState('LISTENING');micStatus('Listening','ok');showHint('Listening. Speak now.')};
+  rec.onresult=e=>{const t=[...e.results].map(r=>r[0].transcript).join('');$('#txt').value=t;if(e.results[e.results.length-1].isFinal)final=t};
+  rec.onerror=e=>{err=e.error;const M={'not-allowed':'Speech recognition was refused. Check that Chrome’s speech service is enabled, then Retry.','service-not-allowed':'Speech recognition was refused. Check that Chrome’s speech service is enabled, then Retry.','audio-capture':'No working microphone was found for speech recognition.','network':'Speech recognition needs an internet connection.','no-speech':'I didn’t hear anything. Tap Retry and speak.'}[e.error];
+    if(e.error==='aborted')return;showHint(M||'Speech recognition failed ('+e.error+').',true);if(e.error!=='no-speech')micFail(M||'Speech recognition failed ('+e.error+').','Error')};
+  rec.onend=()=>{rec=null;mic=false;release();pressed(false);level=0;if(state==='LISTENING')setState('IDLE');if(!err)micStatus('Off');
+    if(final){if(pref.auto!==false){$('#txt').value='';send(final)}else{showHint('Edit if needed, then press Send.');$('#txt').focus()}}else if(!err)showHint(DH)};
+  try{rec.start()}catch(e){rec=null;micFail('Speech recognition couldn’t start: '+e.message,'Error')}
+}
+function stopMic(){if(rec){try{rec.abort()}catch(e){}rec=null}release();mic=false;level=0;pressed(false);micStatus('Off');if(state==='LISTENING')setState('IDLE');showHint(DH)}
+$('#mic').onclick=()=>mic?stopMic():startMic();
+$('#retry').onclick=()=>{$('#retry').hidden=true;startMic()};
+
+// voice replies (browser speech synthesis, not a realtime voice model)
+const tts='speechSynthesis' in window;let muted=!!pref.mute;
+function stopSpeak(){if(tts)speechSynthesis.cancel();if(state==='SPEAKING')setState('IDLE')}
+function speak(t){
+  if(!tts||muted)return;const c=t.replace(/[*_`#>]/g,'').replace(/\s+/g,' ').trim();if(!c)return;speechSynthesis.cancel();
+  const l=(navigator.language||'en-US').toLowerCase(),vs=speechSynthesis.getVoices(),v=vs.find(x=>x.lang.toLowerCase()===l)||vs.find(x=>x.lang.toLowerCase().startsWith(l.slice(0,2)));
+  const parts=c.match(/[^.!?]+[.!?]*\s*/g)||[c];
+  parts.forEach((p,i)=>{const u=new SpeechSynthesisUtterance(p.trim());if(v){u.voice=v;u.lang=v.lang}else u.lang=l;
+    if(i===0)u.onstart=()=>setState('SPEAKING');if(i===parts.length-1)u.onend=()=>{if(state==='SPEAKING')setState('IDLE')};
+    u.onerror=e=>{if(e.error!=='interrupted'&&e.error!=='canceled'){setState('IDLE');showHint('Voice playback failed ('+e.error+'). Replies stay on screen.')}};speechSynthesis.speak(u)})}
+function muteUI(){$('#mute').textContent='Voice replies: '+(muted?'Off':'On');$('#mute').setAttribute('aria-pressed',!muted);$('#sTTS').textContent=!tts?'Unsupported':muted?'Muted':'On';$('#sTTS').className=!tts?'bad':''}
+$('#mute').onclick=()=>{muted=!muted;pref.mute=muted;savePref();if(muted)stopSpeak();muteUI()};$('#stop').onclick=stopSpeak;muteUI();
+$('#sSR').textContent=SR?'Available':'Unsupported here';$('#sSR').className=SR?'':'bad';
+$('#auto').checked=pref.auto!==false;$('#auto').onchange=e=>{pref.auto=e.target.checked;savePref()};
+
+// conversation: real model via /api/chat, streamed
+const hist=[];let busy=false,provider='';
+function add(role,text,err){const e=$('#empty');e&&e.remove();const d=document.createElement('div');d.className='msg '+role+(err?' err':'');d.textContent=text;$('#log').appendChild(d);$('#log').scrollTop=1e9;return d}
+async function send(text,redo){
+  text=text.trim();if(!text||busy)return;busy=true;$('.send').disabled=true;stopSpeak();
+  hist.push({role:'user',content:text});if(!redo)add('user',text);
+  const b=add('ai','');b.innerHTML='<span class="dots"><i></i><i></i><i></i></span>';setState('PROCESSING');showHint('Murphy is thinking…');let out='';
+  try{
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:hist.slice(-20)})});
+    if(!r.ok){let m='Request failed ('+r.status+'). Is the Murphy server running at this address?';try{m=(await r.json()).error||m}catch(e){}throw new Error(m)}
+    const rd=r.body.getReader(),dec=new TextDecoder();
+    for(;;){const{done,value}=await rd.read();if(done)break;out+=dec.decode(value,{stream:true});b.textContent=out;$('#log').scrollTop=1e9}
+    if(!out.trim())throw new Error('The model returned an empty reply.');
+    hist.push({role:'assistant',content:out});setState('IDLE');showHint(DH);$('#sAI').textContent='Connected ('+provider+')';$('#sAI').className='ok';speak(out);
+  }catch(e){
+    if(hist.length&&hist[hist.length-1].role==='user')hist.pop();
+    const m=e instanceof TypeError?'Can’t reach the Murphy server. Check your connection and that you opened Murphy at its hosted address.':e.message;
+    b.className='msg sys err';b.textContent=m;const rb=document.createElement('button');rb.className='chip';rb.textContent='Retry';rb.style.cssText='display:block;margin-top:6px';
+    rb.onclick=()=>{b.remove();send(text,true)};b.appendChild(rb);
+    setState('ERROR');showHint('');clearTimeout(errTimer);errTimer=setTimeout(()=>{if(state==='ERROR')setState('IDLE')},5000);
+  }finally{busy=false;$('.send').disabled=false}
+}
+$('#form').onsubmit=e=>{e.preventDefault();if(busy)return;const v=$('#txt').value;if(!v.trim())return;$('#txt').value='';send(v)};
+fetch('/api/health').then(r=>r.json()).then(h=>{provider=h.provider;$('#sAI').textContent=h.configured?'Key configured ('+h.provider+')':'Server up, no API key';$('#sAI').className=h.configured?'':'bad'}).catch(()=>{$('#sAI').textContent='Server unreachable';$('#sAI').className='bad'});
+
+// settings
+$('#gear').onclick=()=>$('#settings').classList.toggle('open');$('#closeSet').onclick=()=>$('#settings').classList.remove('open');
+function applyPref(){if(pref.theme&&pref.theme!=='auto')root.dataset.theme=pref.theme;else root.removeAttribute('data-theme');lite=!!pref.lite;$('#theme').value=pref.theme||'auto';$('#lite').checked=lite;build()}
+$('#theme').onchange=e=>{pref.theme=e.target.value;savePref();applyPref()};$('#lite').onchange=e=>{pref.lite=e.target.checked;savePref();applyPref()};
+
+// MURPHY CORE: canvas orb
+const cv=$('#orb'),g=cv.getContext('2d');let S=0,pts=[];
+function build(){const n=lite||matchMedia('(prefers-reduced-motion:reduce)').matches?70:150;pts=[];for(let i=0;i<n;i++){const y=1-2*(i+.5)/n,r=Math.sqrt(1-y*y),a=i*2.39996;pts.push([Math.cos(a)*r,y,Math.sin(a)*r])}}
+function size(){const r=cv.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);S=r.width;cv.width=cv.height=Math.round(S*d);g.setTransform(d,0,0,d,0,0)}
+addEventListener('resize',size);
+const dark=()=>root.dataset.theme==='dark'||(root.dataset.theme!=='light'&&matchMedia('(prefers-color-scheme:dark)').matches);
+let ang=0,t=0,last=performance.now();
+function frame(now){
+  const dt=Math.min((now-last)/1000,.05);last=now;t+=dt;
+  const T=P[state],k=1-Math.pow(.02,dt);
+  ['spd','amp','ring','glow'].forEach(p=>cur[p]+=(T[p]-cur[p])*k);cur.col=cur.col.map((c,i)=>c+(T.col[i]-c)*k);
+  if(an){an.getByteTimeDomainData(buf);let s=0;for(const v of buf){const x=(v-128)/128;s+=x*x}level+=(Math.min(1,Math.sqrt(s/buf.length)*5)-level)*.3}
+  else level+=((state==='SPEAKING'?.5+.4*Math.sin(t*9)*Math.sin(t*3.1):state==='LISTENING'?.25+.2*Math.sin(t*5):0)-level)*.15;
+  ang+=cur.spd*dt;
+  const c=S/2,R=S*.27*(1+cur.amp*Math.sin(t*(state==='PROCESSING'?6:1.6))+level*.22);
+  const d=dark(),col=cur.col.map(v=>Math.round(d?v+55:v)),rgb=a=>`rgba(${col[0]},${col[1]},${col[2]},${a})`;
+  g.clearRect(0,0,S,S);
+  const gr=g.createRadialGradient(c,c,0,c,c,R*1.9);gr.addColorStop(0,rgb(cur.glow*.55));gr.addColorStop(.45,rgb(cur.glow*.14));gr.addColorStop(1,rgb(0));
+  g.fillStyle=gr;g.fillRect(0,0,S,S);
+  [[1.28,.34,0],[1.5,.5,2.1],[1.72,.22,4.2]].forEach(([m,ry,o],i)=>{const rot=t*cur.ring*(i%2?-.6:.5)+o;g.strokeStyle=rgb(.34-i*.07);g.lineWidth=1;g.beginPath();g.ellipse(c,c,R*m,R*m*ry,rot,0,6.2832);g.stroke();
+    const a=t*cur.ring*(1.2+i*.3)+o,x=Math.cos(a)*R*m,y=Math.sin(a)*R*m*ry;g.fillStyle=rgb(.9);g.beginPath();g.arc(c+x*Math.cos(rot)-y*Math.sin(rot),c+x*Math.sin(rot)+y*Math.cos(rot),2.2,0,6.2832);g.fill()});
+  const ca=Math.cos(ang),sa=Math.sin(ang);
+  for(const [x,y,z] of pts){const X=x*ca+z*sa,Z=-x*sa+z*ca,tilt=.35,Y=y*Math.cos(tilt)-Z*Math.sin(tilt),Z2=y*Math.sin(tilt)+Z*Math.cos(tilt),a=.25+.75*(Z2+1)/2;
+    g.fillStyle=rgb(a*.9);g.beginPath();g.arc(c+X*R,c+Y*R,1+1.3*(Z2+1)/2,0,6.2832);g.fill()}
+  const cg=g.createRadialGradient(c,c,0,c,c,R*.55);cg.addColorStop(0,rgb(.55+level*.4));cg.addColorStop(1,rgb(0));g.fillStyle=cg;g.beginPath();g.arc(c,c,R*.55,0,6.2832);g.fill();
+  requestAnimationFrame(frame)}
+applyPref();size();requestAnimationFrame(frame);
+</script>
+</body>
+</html>
